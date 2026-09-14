@@ -1711,12 +1711,12 @@ function iconData.MakeWindow(_, nameData)
 		name = nameData.Name
 
 		if not name then
-			name = nameData.Title or "redz Library V5"
+			name = nameData.Title or "Joo music"
 		end
 	end
 	local text = nameData[2]
 	if not text then
-		text = nameData.SubTitle or "by : redz9999"
+		text = nameData.SubTitle or "للاغاني"
 	end
 	Settings.ScriptFile = nameData[3] or (nameData.SaveFolder or false);
 	(function()
@@ -1771,26 +1771,16 @@ function iconData.MakeWindow(_, nameData)
 	local dataCallbackFunction = dataCallback
 	local alternateDimensions = UDim2.new(1, 0, 1, 0)
 	local compactSquareSize = UDim2.new(0, 0, 0, 0)
-	local Crop = Enum.ScaleType.Crop
-	local BG_ASSET = "126753882601126"
 	local input = dataCallbackFunction("ImageLabel", dialogContainer, {
 		Name = "WindowBackground",
 		Size = alternateDimensions,
 		Position = compactSquareSize,
 		BackgroundTransparency = 1,
-		Image = "rbxthumb://type=Asset&id=" .. BG_ASSET .. "&w=768&h=432",
+		Image = "rbxthumb://type=Asset&id=126753882601126&w=420&h=420",
 		ImageTransparency = 0,
-		ScaleType = Crop,
+		ScaleType = Enum.ScaleType.Crop,
 		ZIndex = 1,
 	})
-	task.spawn(function()
-		local okImg = pcall(function()
-			game:GetService("ContentProvider"):PreloadAsync({ input })
-		end)
-		if not okImg or input.IsLoaded == false then
-			input.Image = "rbxassetid://" .. BG_ASSET
-		end
-	end)
 	instancePropertiesCallback("Corner", input)
 	instancePropertiesCallback("Gradient", dialogContainer, {
 		Rotation = 45,
@@ -1817,9 +1807,10 @@ function iconData.MakeWindow(_, nameData)
 		Position = position,
 		AnchorPoint = anchorPoint,
 		BackgroundTransparency = 1,
-		Image = "rbxassetid://123853175876276",
+		Image = "rbxthumb://type=Asset&id=131084234746851&w=420&h=420",
 		ImageTransparency = 0,
-		ZIndex = 0,
+		ScaleType = Enum.ScaleType.Fit,
+		ZIndex = 2,
 	})
 	runService.Heartbeat:Connect(function(dt)
 		rotationResult.Rotation = rotationResult.Rotation + 90 * dt
@@ -1832,8 +1823,9 @@ function iconData.MakeWindow(_, nameData)
 		Size = secondarySize,
 		Position = additionalDimensions,
 		BackgroundTransparency = 1,
-		Image = "rbxassetid://138344195740446",
+		Image = "rbxthumb://type=Asset&id=108291140586700&w=420&h=420",
 		ImageTransparency = 0,
+		ScaleType = Enum.ScaleType.Fit,
 		ZIndex = 10,
 	})
 	local guiObjectCallback = dataCallback
@@ -2327,8 +2319,8 @@ function iconData.MakeWindow(_, nameData)
 	local data = {}
 	function data.CloseBtn(_)
 		data:Dialog({
-			Title = "SIKO HUB",
-			Text = "هل تريد اغلاق اقوى سكربت ؟",
+			Title = "Joo music",
+			Text = "هل تريد غلق سكربت joo music للاغاني؟",
 			Options = {
 				{
 					"نعم",
