@@ -1183,6 +1183,10 @@ Connection.FlagsChanged:Connect(function(_, _)
 end)
 local parent = dataCallback("ScreenGui", CoreGui, {
 	Name = "Nexus Library V1",
+	ResetOnSpawn = false,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+	IgnoreGuiInset = true,
+	DisplayOrder = 999,
 }, { dataCallback("UIScale", {
 	Scale = capturedScale,
 	Name = "Scale",
@@ -1277,56 +1281,84 @@ local function handleSize(optionData)
 
 	return tween
 end
-local function inputCallback(guiObject)
-	task.spawn(function()
-		resultCallback(guiObject, {
-			Active = true,
-			AutoButtonColor = false,
-		})
-		local p49Position
-		local flag
-		local function handler(secondaryInput)
-			local difference = secondaryInput.Position - nil
-			local dimensions = UDim2.new(
-				p49Position.X.Scale,
-				p49Position.X.Offset + difference.X / capturedScale,
-				p49Position.Y.Scale,
-				p49Position.Y.Offset + difference.Y / capturedScale
-			)
+local function isDragInput(input)
+	return input.UserInputType == Enum.UserInputType.MouseButton1
+		or input.UserInputType == Enum.UserInputType.Touch
+end
 
-			handleSize({
-				guiObject,
-				"Position",
-				dimensions,
-				0.35,
-			})
+local function isMoveInput(input)
+	return input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+end
+
+local function MakeDraggable(moveObject, handle)
+	handle = handle or moveObject
+	pcall(function()
+		moveObject.Active = true
+		if handle:IsA("GuiButton") then
+			handle.AutoButtonColor = false
+			handle.Active = true
 		end
-		guiObject.MouseButton1Down:Connect(function()
-			flag = true
-		end)
-		guiObject.InputBegan:Connect(function(input)
-			local isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.MouseButton1
+	end)
 
-			if not isUserInputTypeTouch then
-				isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.Touch
-			end
+	local dragging = false
+	local dragStart
+	local startPos
 
-			if isUserInputTypeTouch then
-				p49Position = guiObject.Position
-
-				local _ = input.Position
-
-				while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-					RunService.Heartbeat:Wait()
-
-					if flag then
-						handler(input)
-					end
-				end
+	handle.InputBegan:Connect(function(input)
+		if not isDragInput(input) then
+			return
+		end
+		dragging = true
+		dragStart = input.Position
+		startPos = moveObject.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
 			end
 		end)
 	end)
 
+	local function applyDrag(input)
+		if not dragging or not dragStart or not startPos then
+			return
+		end
+		local difference = input.Position - dragStart
+		moveObject.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + difference.X / math.max(capturedScale, 0.01),
+			startPos.Y.Scale,
+			startPos.Y.Offset + difference.Y / math.max(capturedScale, 0.01)
+		)
+	end
+
+	handle.InputChanged:Connect(function(input)
+		if isMoveInput(input) then
+			applyDrag(input)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if isMoveInput(input) then
+			applyDrag(input)
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if isDragInput(input) then
+			dragging = false
+		end
+	end)
+
+	return moveObject
+end
+
+local function inputCallback(guiObject)
+	resultCallback(guiObject, {
+		Active = true,
+		AutoButtonColor = false,
+	})
+	MakeDraggable(guiObject, guiObject)
 	return guiObject
 end
 local function alternateHandler(theme)
@@ -1728,7 +1760,10 @@ function iconData.MakeWindow(_, nameData)
 		contCallbackFunction("ImageButton", fallbackParent, {
 			Size = dimensions,
 			Position = secondaryDimensions,
-			BackgroundTransparency = 1,
+			BackgroundColor3 = Color3.fromRGB(8, 8, 8),
+			BackgroundTransparency = 0,
+			AutoButtonColor = false,
+			Active = true,
 			Name = "Hub",
 		}),
 		"Main"
@@ -1737,68 +1772,33 @@ function iconData.MakeWindow(_, nameData)
 	local alternateDimensions = UDim2.new(1, 0, 1, 0)
 	local compactSquareSize = UDim2.new(0, 0, 0, 0)
 	local Crop = Enum.ScaleType.Crop
+	local BG_ASSET = "126753882601126"
 	local input = dataCallbackFunction("ImageLabel", dialogContainer, {
 		Name = "WindowBackground",
 		Size = alternateDimensions,
 		Position = compactSquareSize,
 		BackgroundTransparency = 1,
-		Image = "rbxassetid://126753882601126",
-		ImageTransparency = 0.1,
+		Image = "rbxthumb://type=Asset&id=" .. BG_ASSET .. "&w=768&h=432",
+		ImageTransparency = 0,
 		ScaleType = Crop,
-		ZIndex = 0,
+		ZIndex = 1,
 	})
+	task.spawn(function()
+		local okImg = pcall(function()
+			game:GetService("ContentProvider"):PreloadAsync({ input })
+		end)
+		if not okImg or input.IsLoaded == false then
+			input.Image = "rbxassetid://" .. BG_ASSET
+		end
+	end)
 	instancePropertiesCallback("Corner", input)
 	instancePropertiesCallback("Gradient", dialogContainer, {
 		Rotation = 45,
 	})
-	task.spawn(function()
-		resultCallback(dialogContainer, {
-			Active = true,
-			AutoButtonColor = false,
-		})
-		local Position
-		local flag
-		local function handler(secondaryInput)
-			local difference = secondaryInput.Position - nil
-			local dimensions = UDim2.new(
-				Position.X.Scale,
-				Position.X.Offset + difference.X / capturedScale,
-				Position.Y.Scale,
-				Position.Y.Offset + difference.Y / capturedScale
-			)
-
-			handleSize({
-				dialogContainer,
-				"Position",
-				dimensions,
-				0.35,
-			})
-		end
-		dialogContainer.MouseButton1Down:Connect(function()
-			flag = true
-		end)
-		dialogContainer.InputBegan:Connect(function(input)
-			local isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.MouseButton1
-
-			if not isUserInputTypeTouch then
-				isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.Touch
-			end
-
-			if isUserInputTypeTouch then
-				Position = dialogContainer.Position
-
-				local _ = input.Position
-
-				while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-					RunService.Heartbeat:Wait()
-
-					if flag then
-						handler(input)
-					end
-				end
-			end
-		end)
-	end)
+	resultCallback(dialogContainer, {
+		Active = true,
+		AutoButtonColor = false,
+	})
 	local parentResult = instancePropertiesCallback("Corner", dialogContainer)
 	local inputResult = dataCallback("Folder", dialogContainer, {
 		Name = "Components",
@@ -1919,7 +1919,10 @@ function iconData.MakeWindow(_, nameData)
 		Size = UDim2.new(1, 0, 0, 28),
 		BackgroundTransparency = 1,
 		Name = "Top Bar",
+		ZIndex = 20,
+		Active = true,
 	})
+	MakeDraggable(dialogContainer, instance)
 	local timestamp = tick()
 	local instanceCallback = contCallback
 	local parentCallbackFunction = dataCallback
@@ -2307,17 +2310,20 @@ function iconData.MakeWindow(_, nameData)
 		Image = "rbxassetid://10747384394",
 		AutoButtonColor = false,
 		Name = "Close",
+		ZIndex = 60,
 	})
 	local imageResult = resultCallback(activatedResult:Clone(), {
 		Position = UDim2.new(1, -35, 0.5),
 		Image = "rbxassetid://10734896206",
 		Name = "Minimize",
+		ZIndex = 60,
 	})
 	handler(additionalParent, {
 		activatedResult,
 		imageResult,
 	})
-	local flag
+	local flag = false
+	local savedWindowSize = dialogContainer.Size
 	local data = {}
 	function data.CloseBtn(_)
 		data:Dialog({
@@ -2337,24 +2343,22 @@ function iconData.MakeWindow(_, nameData)
 	function data.MinimizeBtn(_)
 		if flag then
 			imageResult.Image = "rbxassetid://10734896206"
+			local restoreSize = savedWindowSize or UDim2.fromOffset(475, 300)
 			handleSize({
 				dialogContainer,
 				"Size",
-				nil,
+				restoreSize,
 				0.25,
 				true,
 			})
 			capturedInput.Visible = true
 			additionalInput.Visible = true
 			flag = false
-
 			return
 		end
 
+		savedWindowSize = dialogContainer.Size
 		imageResult.Image = "rbxassetid://10734924532"
-
-		local _ = dialogContainer.Size
-
 		capturedInput.Visible = false
 		additionalInput.Visible = false
 		handleSize({
@@ -2382,54 +2386,11 @@ function iconData.MakeWindow(_, nameData)
 			BackgroundColor3 = backgroundColor3,
 			AutoButtonColor = false,
 		})
-		task.spawn(function()
-			resultCallback(guiObject, {
-				Active = true,
-				AutoButtonColor = false,
-			})
-			local Position
-			local flag
-			local function handler(secondaryInput)
-				local difference = secondaryInput.Position - nil
-				local dimensions = UDim2.new(
-					Position.X.Scale,
-					Position.X.Offset + difference.X / capturedScale,
-					Position.Y.Scale,
-					Position.Y.Offset + difference.Y / capturedScale
-				)
-
-				handleSize({
-					guiObject,
-					"Position",
-					dimensions,
-					0.35,
-				})
-			end
-			guiObject.MouseButton1Down:Connect(function()
-				flag = true
-			end)
-			guiObject.InputBegan:Connect(function(input)
-				local isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.MouseButton1
-
-				if not isUserInputTypeTouch then
-					isUserInputTypeTouch = input.UserInputType == Enum.UserInputType.Touch
-				end
-
-				if isUserInputTypeTouch then
-					Position = guiObject.Position
-
-					local _ = input.Position
-
-					while UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-						RunService.Heartbeat:Wait()
-
-						if flag then
-							handler(input)
-						end
-					end
-				end
-			end)
-		end)
+		resultCallback(guiObject, {
+			Active = true,
+			AutoButtonColor = false,
+		})
+		MakeDraggable(guiObject, guiObject)
 		local button = guiObject
 		local corner
 		local stroke
