@@ -1,6 +1,6 @@
 local unpackValues = unpack or table.unpack
 local ok, result = pcall(function()
-	return loadstring(game:HttpGet("https://pastebin.com/raw/4tLkL6KP"))()
+	return loadstring(game:HttpGet("https://pastebin.com/raw/0EQy5vhw"))()
 end)
 local isResultStatus = not ok
 if not isResultStatus then
