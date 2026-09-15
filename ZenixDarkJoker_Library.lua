@@ -6,7 +6,8 @@ local ThemeColors = {
 	ButtonPress = Color3.fromRGB(8, 8, 8),
 	MidGray = Color3.fromRGB(120, 120, 120),
 	LightGray = Color3.fromRGB(200, 200, 200),
-	PureWhite = Color3.fromRGB(255, 255, 255)
+	PureWhite = Color3.fromRGB(255, 255, 255),
+	SoftWhite = Color3.fromRGB(235, 235, 235)
 }
 
 local RunService = game:GetService("RunService")
@@ -169,18 +170,62 @@ local function StyleInteractive(frame)
 	if frame:IsA("GuiButton") then
 		frame.AutoButtonColor = false
 	end
+
+	local shine = frame:FindFirstChild("JooShine")
+	if not shine then
+		shine = Instance.new("Frame")
+		shine.Name = "JooShine"
+		shine.BackgroundColor3 = ThemeColors.PureWhite
+		shine.BackgroundTransparency = 1
+		shine.BorderSizePixel = 0
+		shine.Size = UDim2.new(0.28, 0, 1.4, 0)
+		shine.Position = UDim2.new(-0.4, 0, 0.5, 0)
+		shine.AnchorPoint = Vector2.new(0.5, 0.5)
+		shine.Rotation = 18
+		shine.ZIndex = (frame.ZIndex or 14) + 2
+		shine.Parent = frame
+		Instance.new("UICorner", shine).CornerRadius = UDim.new(1, 0)
+		local sg = Instance.new("UIGradient")
+		sg.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.5, 0.35),
+			NumberSequenceKeypoint.new(1, 1)
+		})
+		sg.Parent = shine
+	end
+
+	local stroke = frame:FindFirstChildOfClass("UIStroke")
+	local baseThickness = stroke and stroke.Thickness or 1.8
+	local hovering = false
+
+	local function playShine()
+		shine.Position = UDim2.new(-0.35, 0, 0.5, 0)
+		shine.BackgroundTransparency = 0.55
+		Tween(shine, { Position = UDim2.new(1.35, 0, 0.5, 0), BackgroundTransparency = 1 }, 0.42, Enum.EasingStyle.Quad)
+	end
+
 	frame.MouseEnter:Connect(function()
-		Tween(frame, { BackgroundColor3 = ThemeColors.ButtonHover, BackgroundTransparency = 0.08 }, 0.16)
+		hovering = true
+		Tween(frame, { BackgroundColor3 = ThemeColors.ButtonHover, BackgroundTransparency = 0.05 }, 0.18)
+		if stroke then
+			Tween(stroke, { Thickness = baseThickness + 0.4 }, 0.18)
+		end
+		playShine()
 	end)
 	frame.MouseLeave:Connect(function()
-		Tween(frame, { BackgroundColor3 = ThemeColors.ButtonNormal, BackgroundTransparency = 0 }, 0.16)
+		hovering = false
+		Tween(frame, { BackgroundColor3 = ThemeColors.ButtonNormal, BackgroundTransparency = 0 }, 0.18)
+		if stroke then
+			Tween(stroke, { Thickness = baseThickness }, 0.18)
+		end
 	end)
 	if frame:IsA("GuiButton") then
 		frame.MouseButton1Down:Connect(function()
-			Tween(frame, { BackgroundColor3 = ThemeColors.ButtonPress }, 0.07)
+			Tween(frame, { BackgroundColor3 = ThemeColors.ButtonPress }, 0.08)
 		end)
 		frame.MouseButton1Up:Connect(function()
-			Tween(frame, { BackgroundColor3 = ThemeColors.ButtonHover }, 0.1)
+			Tween(frame, { BackgroundColor3 = hovering and ThemeColors.ButtonHover or ThemeColors.ButtonNormal }, 0.12)
+			playShine()
 		end)
 	end
 end
@@ -243,6 +288,29 @@ local function ButtonFrame(Container, Title, Description, HolderSize)
 	})
 	redzlib.Elements["Corner"](Frame, UDim.new(0, 8))
 	ApplyMetallicBorder(Frame, 1.8)
+
+	local accent = Instance.new("Frame")
+	accent.Name = "ZenixAccent"
+	accent.Size = UDim2.new(0, 3, 0.62, 0)
+	accent.Position = UDim2.new(0, 4, 0.5, 0)
+	accent.AnchorPoint = Vector2.new(0, 0.5)
+	accent.BackgroundColor3 = ThemeColors.PureWhite
+	accent.BackgroundTransparency = 0.25
+	accent.BorderSizePixel = 0
+	accent.ZIndex = 16
+	accent.Parent = Frame
+	Instance.new("UICorner", accent).CornerRadius = UDim.new(1, 0)
+
+	local inner = Instance.new("Frame")
+	inner.Name = "JooInner"
+	inner.Size = UDim2.new(1, -2, 0, 1)
+	inner.Position = UDim2.new(0, 1, 0, 1)
+	inner.BackgroundColor3 = ThemeColors.PureWhite
+	inner.BackgroundTransparency = 0.82
+	inner.BorderSizePixel = 0
+	inner.ZIndex = 15
+	inner.Parent = Frame
+
 	StyleInteractive(Frame)
 
 	local LabelHolder = Create("Frame", Frame, {
@@ -467,20 +535,20 @@ Instance.new("UICorner", ParticleContainer).CornerRadius = UDim.new(0, 8)
 ParticleContainer.Parent = MainHubFrame
 
 local particles = {}
-local colorTweenInfo = TweenInfo.new(4.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
 
 for i = 1, 46 do
-	local size = (i % 3 == 0) and 8 or 6
+	local size = math.random(3, 8)
+	local startWhite = (i % 2 == 0)
 	local wrap = Instance.new("Frame")
-	wrap.Size = UDim2.new(0, size + 6, 0, size + 6)
+	wrap.Size = UDim2.new(0, size + 8, 0, size + 8)
 	wrap.BackgroundTransparency = 1
 	wrap.ZIndex = 2
 	wrap.Parent = ParticleContainer
 
 	local glow = Instance.new("Frame")
 	glow.Size = UDim2.new(1, 0, 1, 0)
-	glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	glow.BackgroundTransparency = 0.88
+	glow.BackgroundColor3 = startWhite and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+	glow.BackgroundTransparency = 0.86
 	glow.BorderSizePixel = 0
 	glow.ZIndex = 2
 	glow.Parent = wrap
@@ -490,23 +558,30 @@ for i = 1, 46 do
 	dot.Size = UDim2.new(0, size, 0, size)
 	dot.Position = UDim2.new(0.5, 0, 0.5, 0)
 	dot.AnchorPoint = Vector2.new(0.5, 0.5)
-	dot.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	dot.BackgroundTransparency = math.random(25, 65) / 100
+	dot.BackgroundColor3 = startWhite and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+	dot.BackgroundTransparency = math.random(18, 50) / 100
 	dot.BorderSizePixel = 0
 	dot.ZIndex = 3
 	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
 	dot.Parent = wrap
 
-	TweenService:Create(dot, colorTweenInfo, { BackgroundColor3 = Color3.fromRGB(255, 255, 255) }):Play()
+	local pulse = TweenInfo.new(math.random(26, 46) / 10, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+	TweenService:Create(dot, pulse, {
+		BackgroundColor3 = startWhite and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = math.random(20, 70) / 100
+	}):Play()
+	TweenService:Create(glow, pulse, {
+		BackgroundColor3 = startWhite and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(255, 255, 255)
+	}):Play()
 
 	table.insert(particles, {
 		element = wrap,
 		xPos = math.random(0, 1000) / 1000,
 		yPos = math.random(0, 1000) / 1000,
-		speed = math.random(45, 75) / 1000,
-		freq = math.random(8, 20) / 10,
-		amp = math.random(8, 18) / 1000,
-		offset = math.random(0, 10)
+		speed = math.random(35, 70) / 1000,
+		freq = math.random(8, 18) / 10,
+		amp = math.random(6, 16) / 1000,
+		offset = math.random() * 10
 	})
 end
 
@@ -515,11 +590,11 @@ RunService.RenderStepped:Connect(function(dt)
 		return
 	end
 	for _, p in ipairs(particles) do
-		p.yPos = p.yPos - (p.speed * (dt * 0.5))
+		p.yPos = p.yPos - (p.speed * dt * 0.55)
 		local sway = math.sin(tick() * p.freq + p.offset) * p.amp
 		p.element.Position = UDim2.new(p.xPos + sway, 0, p.yPos, 0)
-		if p.yPos <= -0.1 then
-			p.yPos = 1.1
+		if p.yPos <= -0.08 then
+			p.yPos = 1.08
 			p.xPos = math.random(0, 1000) / 1000
 		end
 	end
@@ -893,6 +968,17 @@ MinimizeButton.Activated:Connect(Window.MinimizeBtn)
 local TabContainers = {}
 local TabButtons = {}
 
+local function SetTabActive(btn, on)
+	Tween(btn, { BackgroundColor3 = on and Color3.fromRGB(26, 26, 26) or ThemeColors.ButtonNormal }, 0.2)
+	local bar = btn:FindFirstChild("ActiveBar")
+	if bar then
+		Tween(bar, {
+			BackgroundTransparency = on and 0 or 0.82,
+			Size = on and UDim2.new(0, 3, 0, 16) or UDim2.new(0, 3, 0, 7)
+		}, 0.2)
+	end
+end
+
 function CreateTab(TabName)
 	local TabBtn = Create("TextButton", {
 		Parent = MainScroll,
@@ -906,9 +992,21 @@ function CreateTab(TabName)
 	ApplyMetallicBorder(TabBtn, 1.8)
 	StyleInteractive(TabBtn)
 
+	local activeBar = Instance.new("Frame")
+	activeBar.Name = "ActiveBar"
+	activeBar.Size = UDim2.new(0, 3, 0, 7)
+	activeBar.Position = UDim2.new(0, 3, 0.5, 0)
+	activeBar.AnchorPoint = Vector2.new(0, 0.5)
+	activeBar.BackgroundColor3 = ThemeColors.PureWhite
+	activeBar.BackgroundTransparency = 0.82
+	activeBar.BorderSizePixel = 0
+	activeBar.ZIndex = 14
+	activeBar.Parent = TabBtn
+	Instance.new("UICorner", activeBar).CornerRadius = UDim.new(1, 0)
+
 	local icon = Instance.new("ImageLabel")
 	icon.Size = UDim2.new(0, 18, 0, 18)
-	icon.Position = UDim2.new(0, 5, 0.5, 0)
+	icon.Position = UDim2.new(0, 10, 0.5, 0)
 	icon.AnchorPoint = Vector2.new(0, 0.5)
 	icon.BackgroundTransparency = 1
 	icon.Image = "rbxthumb://type=Asset&id=76809797628298&w=420&h=420"
@@ -917,8 +1015,8 @@ function CreateTab(TabName)
 
 	Create("TextLabel", {
 		Parent = TabBtn,
-		Size = UDim2.new(1, -30, 1, 0),
-		Position = UDim2.new(0, 28, 0, 0),
+		Size = UDim2.new(1, -34, 1, 0),
+		Position = UDim2.new(0, 31, 0, 0),
 		Text = '<font family="12187367066">' .. TabName .. "</font>",
 		TextColor3 = Theme["Color Text"],
 		Font = Enum.Font.GothamMedium,
@@ -946,13 +1044,16 @@ function CreateTab(TabName)
 
 	if #TabContainers == 1 then
 		Page.Parent = Containers
+		SetTabActive(TabBtn, true)
 	end
 
 	TabBtn.Activated:Connect(function()
-		for _, p in pairs(TabContainers) do
+		for i, p in ipairs(TabContainers) do
 			p.Parent = nil
+			SetTabActive(TabButtons[i], false)
 		end
 		Page.Parent = Containers
+		SetTabActive(TabBtn, true)
 	end)
 
 	local Tab = {}
@@ -960,8 +1061,21 @@ function CreateTab(TabName)
 	function Tab:AddButton(Configs)
 		local name = Configs[1] or "Button"
 		local cb = Configs.Callback or Configs[2] or function() end
-		local btn = ButtonFrame(Page, name, nil, UDim2.new(1, -20))
+		local btn = ButtonFrame(Page, name, Configs.Desc or Configs.Description, UDim2.new(1, -36))
+		local arrow = Create("ImageLabel", btn, {
+			Size = UDim2.new(0, 14, 0, 14),
+			Position = UDim2.new(1, -12, 0.5, 0),
+			AnchorPoint = Vector2.new(1, 0.5),
+			BackgroundTransparency = 1,
+			Image = "rbxassetid://10709791437",
+			ImageColor3 = ThemeColors.SoftWhite,
+			ZIndex = 16
+		})
 		btn.Activated:Connect(function()
+			Tween(arrow, { Rotation = 22, ImageColor3 = ThemeColors.PureWhite }, 0.08)
+			task.delay(0.1, function()
+				Tween(arrow, { Rotation = 0, ImageColor3 = ThemeColors.SoftWhite }, 0.16)
+			end)
 			if type(cb) == "function" then
 				cb()
 			end
